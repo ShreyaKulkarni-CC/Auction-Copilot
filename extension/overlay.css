@@ -1,0 +1,479 @@
+/* Auction Copilot overlay — same palette as the scoping brief / demo */
+
+/* Docked launcher — vertically centered on the right edge, like the
+   "Simplify" extension's icon, instead of a small bottom-right pill. This
+   is the entry point to the whole tool, so it needs to read clearly at a
+   glance and be easy to hit without hunting for it. */
+#ac-trigger-btn {
+  position: fixed;
+  top: 50%;
+  right: 0;
+  transform: translateY(-50%);
+  z-index: 2147483000;
+  font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+  font-size: 15px;
+  font-weight: 700;
+  background: #1f6f8b;
+  color: #fff;
+  border: none;
+  border-radius: 12px 0 0 12px;
+  padding: 18px 20px 18px 18px;
+  box-shadow: -4px 6px 18px rgba(0, 0, 0, 0.28);
+  cursor: pointer;
+  writing-mode: horizontal-tb;
+  line-height: 1.3;
+  text-align: right;
+  max-width: 120px;
+}
+#ac-trigger-btn:hover { background: #185a70; }
+
+#ac-overlay {
+  position: fixed;
+  top: 50%;
+  right: 96px;
+  transform: translateY(-50%);
+  z-index: 2147483000;
+  font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+  max-width: 380px;
+}
+/* When the button's own width pushes past ~120px (longer label at some
+   zoom levels) the card should still clear it rather than overlap — this
+   generous right offset already assumes the wider button size above. */
+
+#ac-overlay.ac-badge {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  background: #ffffff;
+  border: 1px solid #b9c2c6;
+  border-radius: 999px;
+  padding: 8px 14px 8px 10px;
+  font-size: 12px;
+  font-weight: 600;
+  color: #1c2530;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+#ac-overlay .ac-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: #1f6f8b;
+  display: inline-block;
+}
+
+#ac-overlay.ac-card,
+#ac-overlay.ac-card-error {
+  background: #ffffff;
+  border: 1px solid #d5dbde;
+  border-left: 4px solid #d5dbde;
+  border-radius: 12px;
+  padding: 14px 16px;
+  box-shadow: 0 12px 28px rgba(0, 0, 0, 0.2);
+  max-height: 80vh;
+  overflow-y: auto;
+}
+/* Color-coded left edge matching the decision, so the call is legible
+   even before you've read a word — glance at the edge, not just the
+   banner inside it. */
+#ac-overlay.ac-card.ac-card-accent-good { border-left-color: #3f7a55; }
+#ac-overlay.ac-card.ac-card-accent-danger { border-left-color: #a83a32; }
+#ac-overlay.ac-card.ac-card-accent-warn { border-left-color: #a2670f; }
+#ac-overlay .ac-head {
+  font-weight: 700;
+  font-size: 15px;
+  color: #1c2530;
+  margin-bottom: 2px;
+}
+#ac-overlay .ac-sub {
+  font-size: 11px;
+  color: #57636e;
+  margin-bottom: 10px;
+}
+/* The caveat now lives at the bottom of "Show full breakdown" as a
+   footnote, not at the top of the card — it's a data-quality note, not
+   the headline. Smaller and quieter than it used to be at the top. */
+#ac-overlay .ac-caveat {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #a2670f;
+  background: #f7ecd9;
+  border-radius: 6px;
+  padding: 7px 9px;
+  margin-top: 10px;
+  line-height: 1.4;
+}
+
+/* Distinct from ac-caveat on purpose: ac-caveat is the MODEL flagging its
+   own data-quality gap; ac-server-note is server.js reporting a check it
+   ran independently of the model (and, when triggered, a correction it
+   made) — a different kind of statement, so it gets a different, calmer
+   color (green, "verified/fixed") rather than the amber "the model itself
+   is unsure" tone of ac-caveat. */
+#ac-overlay .ac-server-note {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #1a7a4c;
+  background: #e4f5ec;
+  border-radius: 6px;
+  padding: 7px 9px;
+  margin-top: 8px;
+  line-height: 1.4;
+}
+
+/* Decisive verdict banner — now the FIRST thing on the card, and the
+   largest text in it. This is the product; everything else is support. */
+#ac-overlay .ac-decision {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+  border-radius: 8px;
+  padding: 12px 14px;
+  margin-bottom: 4px;
+}
+#ac-overlay .ac-decision-label {
+  font-size: 19px;
+  font-weight: 800;
+  letter-spacing: 0.02em;
+}
+#ac-overlay .ac-decision-ceiling {
+  font-size: 15px;
+  font-weight: 700;
+  opacity: 0.9;
+}
+#ac-overlay .ac-decision-good { background: #e4efe7; color: #3f7a55; }
+#ac-overlay .ac-decision-danger { background: #f3e1de; color: #a83a32; }
+#ac-overlay .ac-decision-warn { background: #f7ecd9; color: #a2670f; }
+
+/* Buy rating — a finer five-tier "how good a deal is this" read,
+   distinct from the three-way BUY/PASS/BID CEILING decision above.
+   Always visible (not behind the toggle) since it's core decision
+   support, not supplementary detail. */
+#ac-overlay .ac-rating {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  border-radius: 8px;
+  padding: 8px 12px;
+  margin-bottom: 8px;
+}
+#ac-overlay .ac-rating-label {
+  font-size: 12.5px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+}
+#ac-overlay .ac-rating-reason {
+  font-size: 11px;
+  line-height: 1.4;
+  opacity: 0.9;
+}
+#ac-overlay .ac-rating-good { background: #e4efe7; color: #3f7a55; }
+#ac-overlay .ac-rating-profitable { background: #e1eef2; color: #1f6f8b; }
+#ac-overlay .ac-rating-needswork { background: #f7ecd9; color: #a2670f; }
+#ac-overlay .ac-rating-flag { background: #fbe4d2; color: #b0521c; }
+#ac-overlay .ac-rating-bad { background: #f3e1de; color: #a83a32; }
+
+/* One-line coverage count under the decision — how much was actually
+   reviewed, so you can trust the decision wasn't made on a partial read. */
+#ac-overlay .ac-coverage {
+  font-size: 10.5px;
+  font-weight: 600;
+  color: #8894a0;
+  margin-bottom: 8px;
+}
+
+#ac-overlay .ac-headline {
+  font-size: 12.5px;
+  color: #1c2530;
+  line-height: 1.5;
+  margin-bottom: 10px;
+}
+
+/* "Suggest a correction" — deliberately its own button, separate from
+   "Show full breakdown," and placed right after the headline so it's
+   visible without expanding anything. The point is a buyer catching a
+   miss can flag it in one click, not go hunting for where to do that. */
+#ac-overlay .ac-feedback-toggle {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  background: #eef5f7;
+  border: 1px solid #bfd8de;
+  border-radius: 6px;
+  padding: 7px;
+  cursor: pointer;
+  color: #1f6f8b;
+  margin-bottom: 8px;
+}
+#ac-overlay .ac-feedback-form[hidden] { display: none; }
+#ac-overlay .ac-feedback-form {
+  margin-bottom: 10px;
+}
+#ac-overlay .ac-feedback-text {
+  width: 100%;
+  box-sizing: border-box;
+  font-family: inherit;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #1c2530;
+  background: #fff;
+  border: 1px solid #d5dbde;
+  border-radius: 6px;
+  padding: 8px;
+  resize: vertical;
+  margin-bottom: 6px;
+}
+#ac-overlay .ac-feedback-submit {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  background: #1f6f8b;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  padding: 7px;
+  cursor: pointer;
+}
+#ac-overlay .ac-feedback-submit:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+#ac-overlay .ac-feedback-status {
+  font-size: 10.5px;
+  font-weight: 600;
+  margin-top: 6px;
+}
+#ac-overlay .ac-feedback-status[hidden] { display: none; }
+#ac-overlay .ac-feedback-status-ok { color: #3f7a55; }
+#ac-overlay .ac-feedback-status-error { color: #a83a32; }
+
+#ac-overlay .ac-details-toggle {
+  width: 100%;
+  font-size: 11px;
+  font-weight: 700;
+  background: #f5f7f8;
+  border: 1px solid #d5dbde;
+  border-radius: 6px;
+  padding: 7px;
+  cursor: pointer;
+  color: #1f6f8b;
+  margin-bottom: 4px;
+}
+#ac-overlay .ac-details {
+  margin-top: 8px;
+}
+#ac-overlay .ac-details[hidden] { display: none; }
+
+/* Key findings — each one collapsed to just its label + severity dot by
+   default; clicking the toggle reveals the specific evidence text below
+   it. Keeps the highlight reel scannable instead of a wall of detail
+   text for every item whether you need it or not. */
+#ac-overlay .ac-flag {
+  border-radius: 6px;
+  padding: 4px 2px;
+  margin-bottom: 4px;
+  background: #f3e1de;
+}
+#ac-overlay .ac-flag-warn { background: #f7ecd9; }
+#ac-overlay .ac-flag-good { background: #e4efe7; }
+#ac-overlay .ac-flag-toggle {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 8px;
+  width: 100%;
+  background: none;
+  border: none;
+  padding: 4px 6px;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+  text-align: left;
+  color: inherit;
+  font-family: inherit;
+}
+#ac-overlay .ac-flag-danger .ac-flag-toggle,
+#ac-overlay .ac-flag:not(.ac-flag-warn):not(.ac-flag-good) .ac-flag-toggle { color: #a83a32; }
+#ac-overlay .ac-flag-warn .ac-flag-toggle { color: #a2670f; }
+#ac-overlay .ac-flag-good .ac-flag-toggle { color: #3f7a55; }
+#ac-overlay .ac-flag-caret {
+  flex: 0 0 auto;
+  font-size: 10px;
+  opacity: 0.8;
+}
+#ac-overlay .ac-flag-detail {
+  padding: 0 6px 6px;
+  font-size: 11.5px;
+  font-weight: 400;
+  line-height: 1.45;
+  color: #3a4650;
+}
+#ac-overlay .ac-flag-detail[hidden] { display: none; }
+
+/* Full, unfiltered item inventory — every item the model read, not just
+   the handful highlighted in keyFindings above. Deliberately plain and
+   compact (a dot + one line each) since it's meant to be scanned for
+   "is everything here," not read start to finish. Severity here mirrors
+   the page's own None/Minor/Moderate/Severe color scale (sourced right
+   off the page's own markers where possible), not the three-tier
+   good/warn/danger vocabulary keyFindings above uses. */
+#ac-overlay .ac-inventory {
+  margin-top: 4px;
+  margin-bottom: 10px;
+}
+#ac-overlay .ac-inv-item {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+  font-size: 11px;
+  color: #3a4650;
+  padding: 3px 0;
+  line-height: 1.4;
+}
+#ac-overlay .ac-inv-dot {
+  flex: 0 0 auto;
+  width: 6px;
+  height: 6px;
+  margin-top: 4px;
+  border-radius: 50%;
+  background: #8894a0;
+}
+#ac-overlay .ac-inv-none .ac-inv-dot { background: #8894a0; }
+#ac-overlay .ac-inv-minor .ac-inv-dot { background: #d9b23c; }
+#ac-overlay .ac-inv-moderate .ac-inv-dot { background: #c9772e; }
+#ac-overlay .ac-inv-severe .ac-inv-dot { background: #a83a32; }
+#ac-overlay .ac-inv-severe { color: #a83a32; }
+/* Severe items get an explicit text tag, not just a colored dot, so
+   they can't be missed scanning a long list. */
+#ac-overlay .ac-inv-severe-tag {
+  flex: 0 0 auto;
+  font-size: 9px;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+  color: #ffffff;
+  background: #a83a32;
+  border-radius: 4px;
+  padding: 1px 5px;
+  margin-left: auto;
+}
+
+#ac-overlay .ac-recon {
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+#ac-overlay .ac-recon-title {
+  font-size: 10.5px;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: #8894a0;
+  margin-top: 10px;
+  margin-bottom: 4px;
+}
+#ac-overlay .ac-recon-title:first-child { margin-top: 0; }
+#ac-overlay .ac-recon-item {
+  font-size: 11.5px;
+  color: #57636e;
+  padding: 4px 0;
+  border-bottom: 1px dashed #e6e9ea;
+  line-height: 1.4;
+}
+
+#ac-overlay .ac-est {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  padding: 8px 0;
+  border-top: 1px dashed #d5dbde;
+  margin-top: 8px;
+  color: #57636e;
+}
+#ac-overlay .ac-reasoning-list {
+  margin: 4px 0 0;
+  padding: 9px 10px 9px 22px;
+  border-radius: 7px;
+  background: #f5f7f8;
+  color: #1c2530;
+  font-size: 11.5px;
+  line-height: 1.5;
+}
+#ac-overlay .ac-reasoning-list li {
+  margin-bottom: 6px;
+}
+#ac-overlay .ac-reasoning-list li:last-child {
+  margin-bottom: 0;
+}
+#ac-overlay .ac-error {
+  font-size: 12px;
+  color: #a83a32;
+  line-height: 1.4;
+}
+
+/* Market comparison — visually distinct from ac-recon (the cross-source
+   check) on purpose. Reconciliation is "do the sources agree about this
+   VIN"; this is "how does the bid ceiling compare to the market" — a
+   different kind of statement, sourced from the same benchmark tiles step
+   3 in promptBuilder.js says must never be treated as a fact about this
+   car. Keeping the styling different helps keep the two from blurring
+   together at a glance. */
+#ac-overlay .ac-market {
+  margin-top: 4px;
+  margin-bottom: 6px;
+}
+#ac-overlay .ac-market-item {
+  font-size: 11.5px;
+  color: #1f6f8b;
+  background: #eef5f7;
+  border-radius: 6px;
+  padding: 6px 8px;
+  margin-bottom: 4px;
+  line-height: 1.4;
+}
+#ac-overlay .ac-market-item b {
+  color: #185a70;
+}
+
+/* Out-of-scope nudge — deliberately much quieter than the trigger button
+   or a verdict card: a thin dismissible strip, not competing for
+   attention on a page this tool has nothing to do on. */
+#ac-scope-hint {
+  position: fixed;
+  bottom: 16px;
+  right: 16px;
+  z-index: 2147483000;
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  max-width: 300px;
+  font-family: -apple-system, "Segoe UI", Arial, sans-serif;
+  font-size: 11.5px;
+  line-height: 1.4;
+  color: #57636e;
+  background: #ffffff;
+  border: 1px solid #d5dbde;
+  border-radius: 10px;
+  padding: 10px 12px;
+  box-shadow: 0 8px 20px rgba(0, 0, 0, 0.15);
+}
+#ac-scope-hint-dismiss {
+  flex: 0 0 auto;
+  background: none;
+  border: none;
+  color: #8894a0;
+  font-size: 12px;
+  cursor: pointer;
+  padding: 0 2px;
+}
+#ac-overlay .ac-close {
+  margin-top: 10px;
+  width: 100%;
+  font-size: 11px;
+  font-weight: 600;
+  background: #f5f7f8;
+  border: 1px solid #d5dbde;
+  border-radius: 6px;
+  padding: 6px;
+  cursor: pointer;
+  color: #57636e;
+}

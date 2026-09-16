@@ -1,0 +1,10 @@
+{
+  "_comment": "Mirrors the Category Benchmarks tab of recon_cost_log.xlsx. Currently empty — no real recon-cost history logged yet. Update this once the log has real rows in it (manually for now; a regeneration script can read the .xlsx directly once there's enough data to bother automating).",
+  "categories": {
+    "Cosmetic": { "count": 0, "avgCost": null, "minCost": null, "maxCost": null },
+    "Mechanical": { "count": 0, "avgCost": null, "minCost": null, "maxCost": null },
+    "Safety-System/ADAS": { "count": 0, "avgCost": null, "minCost": null, "maxCost": null },
+    "Structural/Frame": { "count": 0, "avgCost": null, "minCost": null, "maxCost": null },
+    "Title-Brand": { "count": 0, "avgCost": null, "minCost": null, "maxCost": null }
+  }
+}
