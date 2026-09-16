@@ -43,10 +43,19 @@ confirmed against real listings:
 - **Server-side bid-ceiling verification.** The model reports the
   individual numbers behind its formula, and the backend independently
   recomputes the bid ceiling from them and corrects it if it doesn't
-  reconcile, rather than trusting a self-reported final figure.
+  reconcile, rather than trusting a self-reported final figure — caught
+  and corrected a real live mismatch during testing ($3,200 stated vs.
+  $2,000 the model's own numbers actually computed to).
 - **Headline/badge consistency check.** The backend flags — rather than
   silently trusts — a case where the card's headline sentence states a
-  different dollar figure than the verified bid ceiling badge above it.
+  different dollar figure than the verified bid ceiling badge above it;
+  the prompt also now forbids the model from stating one there at all.
+- **Market-comparison notes stay in sync with a corrected bid ceiling.**
+  If the bid ceiling above had to be corrected, any market-comparison
+  note the model already wrote — e.g. "your bid ceiling of $3,200 is
+  38% below MMR Adjusted" — was comparing against its own stale figure,
+  so those notes are rebuilt server-side against the corrected number
+  rather than left contradicting the badge.
 
 Known, deliberate limitations at this stage: it only covers Manheim
 listings reached through vAuto, with one manual trigger per vehicle; the

@@ -557,7 +557,10 @@ function reconcileBidCeiling(verdict) {
 // Fills transportCost / marketComparison from the SAME marketBenchmarks
 // data this request already sent to Gemini, whenever the model's own
 // response left them empty. Never overrides a value the model DID
-// provide — this only fills gaps, it doesn't second-guess populated data.
+// provide, UNLESS the bid ceiling itself just had to be corrected — see
+// the note above the rebuild step below for why that one case is
+// different. Otherwise this only fills gaps, it doesn't second-guess
+// populated data.
 function reconcileMarketData(verdict, marketBenchmarks) {
   const benchmarks = marketBenchmarks && typeof marketBenchmarks === "object" ? marketBenchmarks : {};
 
@@ -572,16 +575,46 @@ function reconcileMarketData(verdict, marketBenchmarks) {
   const existing = Array.isArray(verdict.marketComparison) ? verdict.marketComparison : [];
   const existingLabels = new Set(existing.map((e) => e && e.label));
   const bidCeilingNum = toNumber(verdict.bidCeiling);
+
+  // Same server-authored template used both to fill a missing entry
+  // below and to rebuild a stale one above — one formula, so a rebuilt
+  // note and a freshly-filled note are never worded differently for the
+  // same numbers.
+  function buildNote(valueNum) {
+    if (bidCeilingNum != null && valueNum) {
+      const pct = Math.round(((bidCeilingNum - valueNum) / valueNum) * 100);
+      return `Your bid ceiling is ${Math.abs(pct)}% ${pct >= 0 ? "above" : "below"} this benchmark.`;
+    }
+    return "Extracted from the Glance panel.";
+  }
+
+  // CONFIRMED LIVE 2026-09-16, same run reconcileBidCeiling corrected the
+  // badge from $3,200 to $2,000: the model's own "MMR Adjusted"
+  // marketComparison entry still read "...your bid ceiling of $3,200 is
+  // approximately 38% below MMR Adjusted..." — a third place the stale
+  // number surfaced (after bidCeiling itself and headline), because this
+  // function previously only filled entries the model left out, never an
+  // entry it already wrote. If bidCeilingModelStated is set, every
+  // existing note IS stale by construction — the model computed it
+  // against the same wrong figure it used for the badge, not the
+  // corrected one — so every existing note is rebuilt from scratch with
+  // buildNote() rather than text-edited (the same risk that ruled out
+  // patching headline's prose applies here too).
+  if (verdict.bidCeilingModelStated && existing.length) {
+    const staleFigure = verdict.bidCeilingModelStated;
+    existing.forEach((entry) => {
+      if (!entry) return;
+      entry.note = buildNote(toNumber(entry.value));
+    });
+    verdict.serverCorrections = (verdict.serverCorrections || []).concat([
+      `marketComparison note(s) rebuilt server-side after bidCeiling was corrected — the model's original notes compared benchmarks against its stale ${staleFigure} figure, not the corrected ${verdict.bidCeiling}.`,
+    ]);
+  }
+
   const additions = [];
   for (const [label, value] of Object.entries(benchmarks)) {
     if (!value || existingLabels.has(label)) continue;
-    const valueNum = toNumber(value);
-    let note = "Extracted from the Glance panel.";
-    if (bidCeilingNum != null && valueNum) {
-      const pct = Math.round(((bidCeilingNum - valueNum) / valueNum) * 100);
-      note = `Your bid ceiling is ${Math.abs(pct)}% ${pct >= 0 ? "above" : "below"} this benchmark.`;
-    }
-    additions.push({ label, value, note });
+    additions.push({ label, value, note: buildNote(toNumber(value)) });
   }
   if (additions.length) {
     verdict.marketComparison = existing.concat(additions);
